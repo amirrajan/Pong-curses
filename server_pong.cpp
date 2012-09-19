@@ -22,12 +22,13 @@ using namespace std;
 int sock;
 
 struct element{
-	short int x,y,c;
+	int8_t x,y;
 	bool movhor,movver;
 } ball, screen;
 
 struct client: public element {
 	int16_t fd;
+	int8_t counter;
 	struct sockaddr_in addr;
 	socklen_t size;
 
@@ -59,18 +60,17 @@ void wakeUpServer()
       exit(EXIT_FAILURE);
   }
  	cout << "TCPServer listening port: " << PORT << endl;
-}
 
-int main(int argc, const char **argv)
-{
-
-	WakeUpServer();
 	for (int i = 0; i < 2; i++) /*Two clients*/ {
 		player[i].size = sizeof(struct sockaddr_in);
 		player[i].fd = accept(sock, (struct sockaddr *)&player[i].addr, &size);
 		cout << "Player:  " << i+1 << " from: " << inet_ntoa(player[i].addr.sin_addr) << endl;
 	}
-	
+}
+
+int main(int argc, const char **argv)
+{
+	WakeUpServer();
 	for (nodelay(stdscr,1); !fin; usleep(4000)) {
 		recv( keyboard input );
 
@@ -79,19 +79,19 @@ int main(int argc, const char **argv)
 
 		if (ball.x >= screen.x-2 || ball.x <= 2) {
 
-			if (ball.y == player[0].y-1 || b.y == player[1].y-1) 
+			if (ball.y == player[0].y-1 || ball.y == player[1].y-1) 
 				ball.movver = false;
 
-			else if (ball.y == player[0].y+1 || b.y == player[1].y+1) 
+			else if (ball.y == player[0].y+1 || ball.y == player[1].y+1) 
 				ball.movver = true;
 
 			else if (ball.x >= screen.x-2) {
-				player[0].c++; 
+				player[0].counter++; 
 				ball.x = screen.x/2; 
 				ball.y = screen.y/2;
 
 			} else {
-				player[1].c++; 
+				player[1].counter++; 
 				ball.x = screen.x/2; 
 				ball.y = screen.y/2;
 			}
@@ -101,9 +101,9 @@ int main(int argc, const char **argv)
 		ball.x = ball.movhor ? b.x+1 : b.x-1;
 		ball.y = ball.movver ? b.y+1 : b.y-1;
 
-		if (ball1.y <= 1) 
-			ball1.y = screen.y-2;
-		if (ball1.y >= screen.y-1) 
+		if (player[0].y <= 1) 
+			player[0].y = screen.y-2;
+		if (player[0].y >= screen.y-1) 
 			ball1.y = 2;
 		if (ball2.y <= 1) 
 			ball2.y = screen.y-2; 
