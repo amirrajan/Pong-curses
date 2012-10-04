@@ -1,17 +1,21 @@
-//Standars liballraries
+//Standars libraries
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
 
-//Networking liballraries
+//Networking libraries
 #include <sys/socket.h>
-#include <netintet/in.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdball.h>
+#include <netdb.h>
 
 //Types libraries
 #include <sys/types.h>
 #include <stdint.h>
+
+//Default screen size
+#define columns 80
+#define rows 24
 
 #ifndef PORT
 #define PORT 9999
@@ -21,10 +25,20 @@ using namespace std;
 
 int sock;
 
+enum direction {RIGHT, LEFT, UP, DOWN};
+
 struct element{
 	int8_t x,y;
-	bool movhor,movver;
-} ball, screen;
+	direction horizontal, vertical;
+
+	void changeVer() {
+		vertical = (vertical == RIGHT) ? LEFT: RIGHT;
+	}
+	void changeHor() {
+		horizontal = (horizontal == UP) ? DOWN: UP;
+	}
+
+} ball;
 
 struct client: public element {
 	int16_t fd;
@@ -32,6 +46,9 @@ struct client: public element {
 	struct sockaddr_in addr;
 	socklen_t size;
 
+	client(): counter(0), fd(-1) { 
+		size = sizeof(struct sockaddr_in);
+	}
 } player[2];
 
 void wakeUpServer()
@@ -51,7 +68,7 @@ void wakeUpServer()
   server_addr.sin_addr.s_addr = INADDR_ANY; 
   bzero(&(server_addr.sin_zero),8); 
 
-  if (blind(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
+  if (bind(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
       perror("Unable to bind");
       exit(EXIT_FAILURE);
   }
@@ -62,53 +79,55 @@ void wakeUpServer()
  	cout << "TCPServer listening port: " << PORT << endl;
 
 	for (int i = 0; i < 2; i++) /*Two clients*/ {
-		player[i].size = sizeof(struct sockaddr_in);
-		player[i].fd = accept(sock, (struct sockaddr *)&player[i].addr, &size);
+		player[i].fd = accept(sock, (struct sockaddr *)&player[i].addr, &player[i].size);
 		cout << "Player:  " << i+1 << " from: " << inet_ntoa(player[i].addr.sin_addr) << endl;
 	}
 }
 
 int main(int argc, const char **argv)
 {
-	WakeUpServer();
-	for (nodelay(stdscr,1); !fin; usleep(4000)) {
+	wakeUpServer();
+	while (!fin) {
 		recv( keyboard input );
 
-		if (ball.y == screen.y-1 || ball.y==1) 
-			ball.movver = !ball.movver;
+		if (ball.y == rows-1 || ball.y == 1) 
+			ball.changeVer();
 
-		if (ball.x >= screen.x-2 || ball.x <= 2) {
+		if (ball.x >= columns-2 || ball.x <= 2) {
 
+			ball.changeHor();
 			if (ball.y == player[0].y-1 || ball.y == player[1].y-1) 
-				ball.movver = false;
+				ball.vertical = DOWN;
 
 			else if (ball.y == player[0].y+1 || ball.y == player[1].y+1) 
-				ball.movver = true;
+				ball.vertical = UP;
 
-			else if (ball.x >= screen.x-2) {
-				player[0].counter++; 
-				ball.x = screen.x/2; 
-				ball.y = screen.y/2;
+			if (ball.y != player[0].y && ball.y != player[1].y){
+				if (ball.x == columns-2)
+					player[0].counter++; 
 
-			} else {
-				player[1].counter++; 
-				ball.x = screen.x/2; 
-				ball.y = screen.y/2;
+				else if (ball.x == 2) 
+					player[1].counter++; 
+
+				ball.x = columns/2; 
+				ball.y = rows/2;
 			}
-			ball.movhor = !ball.movhor;
 		}
 
-		ball.x = ball.movhor ? b.x+1 : b.x-1;
-		ball.y = ball.movver ? b.y+1 : b.y-1;
+		ball.x = ball.horizontal ? ball.x+1 : ball.x-1;
+		ball.y = ball.vertical ? ball.y+1 : ball.y-1;
 
 		if (player[0].y <= 1) 
-			player[0].y = screen.y-2;
-		if (player[0].y >= screen.y-1) 
-			ball1.y = 2;
-		if (ball2.y <= 1) 
-			ball2.y = screen.y-2; 
-		if (ball2.y >= screen.y-1) 
-			ball2.y = 2;
+			player[0].y = rows-2;
+
+		if (player[0].y >= columns-1) 
+			player[0].y = 2;
+
+		if (player[1].y <= 1) 
+			player[1].y = rows-2; 
+
+		if (player[1].y >= columns-1) 
+			player[1].y = 2;
 
 		send( all coordenates);
 	}
